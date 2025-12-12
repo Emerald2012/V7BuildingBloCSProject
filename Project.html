@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Action Hub - Interactive Earth Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(45deg, #0a0e27, #1a1f3a, #0f1629);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(100, 200, 255, 0.6);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Glassmorphism header */
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 4em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(118, 75, 162, 0.8)); }
+        }
+
+        .tagline {
+            font-size: 1.3em;
+            opacity: 0.9;
+            color: #a0aec0;
+        }
+
+        /* Tab navigation */
+        .tab-nav {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Earth Simulator */
+        .simulator-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .earth-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 40px auto;
+            perspective: 1000px;
+        }
+
+        .earth {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        .earth-sphere {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4a90e2, #2c5aa0, #1a3a6e);
+            box-shadow: 
+                inset -30px -30px 60px rgba(0, 0, 0, 0.5),
+                0 0 80px rgba(74, 144, 226, 0.6),
+                0 0 120px rgba(74, 144, 226, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .continents {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(ellipse 60px 40px at 45% 35%, #2d5a2d 40%, transparent 41%),
+                radial-gradient(ellipse 50px 35px at 30% 45%, #2d5a2d 40%, transparent 41%),
+                radial-gradient(ellipse 70px 45px at 65% 50%, #2d5a2d 40%, transparent 41%),
+                radial-gradient(ellipse 55px 40px at 50% 65%, #2d5a2d 40%, transparent 41%);
+            opacity: 0.7;
+            animation: drift 30s ease-in-out infinite;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(10px); }
+        }
+
+        .clouds {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(ellipse 40px 20px at 20% 20%, rgba(255, 255, 255, 0.3) 30%, transparent 31%),
+                radial-gradient(ellipse 50px 25px at 70% 40%, rgba(255, 255, 255, 0.3) 30%, transparent 31%),
+                radial-gradient(ellipse 45px 22px at 40% 70%, rgba(255, 255, 255, 0.3) 30%, transparent 31%);
+            animation: cloudMove 40s linear infinite;
+        }
+
+        @keyframes cloudMove {
+            from { transform: translateX(0); }
+            to { transform: translateX(50px); }
+        }
+
+        .atmosphere {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            border-radius: 50%;
+            background: radial-gradient(circle, transparent 60%, rgba(100, 200, 255, 0.3) 100%);
+            pointer-events: none;
+        }
+
+        /* Control Panel */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .control-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .control-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-label {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            margin: 15px 0;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .value-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        /* Stats display */
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        /* Post Initiative Form */
+        .post-form {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #a0aec0;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Initiatives Feed */
+        .initiatives-feed {
+            display: grid;
+            gap: 20px;
+        }
+
+        .initiative-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .initiative-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .initiative-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .initiative-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .initiative-category {
+            padding: 5px 15px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .initiative-description {
+            line-height: 1.6;
+            margin: 15px 0;
+            opacity: 0.9;
+        }
+
+        .initiative-meta {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        .support-btn {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .support-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        /* AI Chat Interface */
+        .ai-chat {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.ai {
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: auto;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5em; }
+            .earth-container { width: 300px; height: 300px; }
+            .controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <header>
+            <h1>🌍 Earth Simulator 2025</h1>
+            <p class="tagline">Control the planet. Share your ideas. Get AI-powered climate solutions.</p>
+        </header>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('simulator')">🌐 Earth Simulator</button>
+            <button class="tab-btn" onclick="switchTab('post')">💡 Post Initiative</button>
+            <button class="tab-btn" onclick="switchTab('feed')">📢 Community Ideas</button>
+            <button class="tab-btn" onclick="switchTab('ai')">🤖 Ask AI</button>
+        </div>
+
+        <!-- Earth Simulator Tab -->
+        <div class="tab-content active" id="simulator">
+            <div class="simulator-container">
+                <h2 style="text-align: center; margin-bottom: 20px; font-size: 2em;">Interactive Earth Simulator</h2>
+                <p style="text-align: center; opacity: 0.8; margin-bottom: 30px;">Control global parameters and see real-time impact on our planet</p>
+
+                <div class="earth-container">
+                    <div class="earth">
+                        <div class="earth-sphere" id="earth-sphere">
+                            <div class="continents"></div>
+                            <div class="clouds" id="clouds"></div>
+                            <div class="atmosphere"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-card">
+                        <div class="control-label">🌡️ Global Temperature</div>
+                        <input type="range" min="13" max="20" value="15" step="0.1" class="slider" id="temp-slider">
+                        <div class="value-display" id="temp-value">15.0°C</div>
+                    </div>
+
+                    <div class="control-card">
+                        <div class="control-label">💨 CO₂ Levels</div>
+                        <input type="range" min="280" max="500" value="420" step="5" class="slider" id="co2-slider">
+                        <div class="value-display" id="co2-value">420 ppm</div>
+                    </div>
+
+                    <div class="control-card">
+                        <div class="control-label">🌊 Sea Level</div>
+                        <input type="range" min="0" max="100" value="20" step="5" class="slider" id="sea-slider">
+                        <div class="value-display" id="sea-value">+20cm</div>
+                    </div>
+
+                    <div class="control-card">
+                        <div class="control-label">🌳 Forest Coverage</div>
+                        <input type="range" min="10" max="100" value="60" step="5" class="slider" id="forest-slider">
+                        <div class="value-display" id="forest-value">60%</div>
+                    </div>
+
+                    <div class="control-card">
+                        <div class="control-label">♻️ Renewable Energy</div>
+                        <input type="range" min="0" max="100" value="30" step="5" class="slider" id="renewable-slider">
+                        <div class="value-display" id="renewable-value">30%</div>
+                    </div>
+
+                    <div class="control-card">
+                        <div class="control-label">🏭 Industrial Activity</div>
+                        <input type="range" min="0" max="100" value="70" step="5" class="slider" id="industry-slider">
+                        <div class="value-display" id="industry-value">70%</div>
+                    </div>
+                </div>
+
+                <div class="stats-display">
+                    <div class="stat-box">
+                        <div class="stat-label">Planet Health</div>
+                        <div class="stat-value" id="health-stat" style="color: #4CAF50;">75%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Biodiversity</div>
+                        <div class="stat-value" id="biodiversity-stat" style="color: #2196F3;">68%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Climate Stability</div>
+                        <div class="stat-value" id="stability-stat" style="color: #FF9800;">62%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Sustainability Score</div>
+                        <div class="stat-value" id="sustainability-stat" style="color: #9C27B0;">71%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post Initiative Tab -->
+        <div class="tab-content" id="post">
+            <div class="post-form">
+                <h2 style="text-align: center; margin-bottom: 30px; font-size: 2em;">Share Your Climate Initiative</h2>
+                
+                <div class="form-group">
+                    <label>Initiative Title</label>
+                    <input type="text" id="initiative-title" placeholder="e.g., Community Solar Panel Installation">
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="initiative-category">
+                        <option value="renewable">Renewable Energy</option>
+                        <option value="conservation">Conservation</option>
+                        <option value="recycling">Recycling & Waste</option>
+                        <option value="transport">Sustainable Transport</option>
+                        <option value="education">Education & Awareness</option>
+                        <option value="policy">Policy & Advocacy</option>
+                        <option value="agriculture">Sustainable Agriculture</option>
+                        <option value="technology">Green Technology</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="initiative-location" placeholder="City, Country">
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="initiative-description" placeholder="Describe your initiative, its goals, and how others can participate..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Expected Impact</label>
+                    <input type="text" id="initiative-impact" placeholder="e.g., -50 tons CO₂/year, 100 trees planted">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact/Website (optional)</label>
+                    <input type="text" id="initiative-contact" placeholder="email@example.com or website.com">
+                </div>
+
+                <button class="submit-btn" onclick="postInitiative()">🚀 Post Initiative</button>
+            </div>
+        </div>
+
+        <!-- Community Feed Tab -->
+        <div class="tab-content" id="feed">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="font-size: 2em; margin-bottom: 10px;">Community Climate Initiatives</h2>
+                <p style="opacity: 0.8;">Real ideas from real people making a difference</p>
+            </div>
+            <div class="initiatives-feed" id="initiatives-container"></div>
+        </div>
+
+        <!-- AI Chat Tab -->
+        <div class="tab-content" id="ai">
+            <div class="ai-chat">
+                <h2 style="text-align: center; margin-bottom: 20px; font-size: 2em;">🤖 Climate AI Assistant</h2>
+                <p style="text-align: center; opacity: 0.8; margin-bottom: 20px;">Ask me anything about climate action, sustainability, or how to make a difference!</p>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message ai">
+                        👋 Hi! I'm your Climate AI Assistant. I can help you with:
+                        <br><br>
+                        • Personalized climate action suggestions
+                        <br>• Carbon footprint calculations
+                        <br>• Environmental science questions
+                        <br>• Grant opportunities for green projects
+                        <br>• Tips for sustainable living
+                        <br><br>
+                        What would you like to know?
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="ai-input" placeholder="Ask about climate solutions, carbon reduction, renewable energy..." onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button class="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Earth Simulator Logic
+        const tempSlider = document.getElementById('temp-slider');
+        const co2Slider = document.getElementById('co2-slider');
+        const seaSlider = document.getElementById('sea-slider');
+        const forestSlider = document.getElementById('forest-slider');
+        const renewableSlider = document.getElementById('renewable-slider');
+        const industrySlider = document.getElementById('industry-slider');
+
+        function updateEarthVisuals() {
+            const temp = parseFloat(tempSlider.value);
+            const co2 = parseFloat(co2Slider.value);
+            const forest = parseFloat(forestSlider.value);
+            const renewable = parseFloat(renewableSlider.value);
+            
+            const earthSphere = document.getElementById('earth-sphere');
+            const clouds = document.getElementById('clouds');
+            
+            // Change Earth color based on temperature
+            if (temp > 17) {
+                earthSphere.style.background = 'radial-gradient(circle at 30% 30%, #e2794a, #c05030, #8a3820)';
+            } else if (temp < 14) {
+                earthSphere.style.background = 'radial-gradient(circle at 30% 30%, #9ac9e2, #6ba5c0, #4a7a9e)';
+            } else {
+                earthSphere.style.background = 'radial-gradient(circle at 30% 30%, #4a90e2, #2c5aa0, #1a3a6e)';
+            }
+            
+            // Cloud density based on CO2
+            const cloudOpacity = Math.min(0.9, (co2 - 280) / 400);
+            clouds.style.opacity = cloudOpacity;
+            
+            // Calculate planet health
+            const health = Math.round((forest * 0.3 + renewable * 0.3 + (100 - (temp - 13) * 10) * 0.2 + (100 - (co2 - 280) / 2.2) * 0.2));
+            const biodiversity = Math.round(forest * 0.7 + (100 - (temp - 13) * 15) * 0.3);
+            const stability = Math.round((100 - Math.abs(temp - 15) * 10) * 0.4 + renewable * 0.3 + (100 - (co2 - 350) / 1.5) * 0.3);
+            const sustainability = Math.round((renewable * 0.4 + forest * 0.3 + (100 - industrySlider.value * 0.3) * 0.3));
+            
+            document.getElementById('health-stat').textContent = Math.max(0, Math.min(100, health)) + '%';
+            document.getElementById('biodiversity-stat').textContent = Math.max(0, Math.min(100, biodiversity)) + '%';
+            document.getElementById('stability-stat').textContent = Math.max(0, Math.min(100, stability)) + '%';
+            document.getElementById('sustainability-stat').textContent = Math.max(0, Math.min(100, sustainability)) + '%';
+            
+            // Color coding
+            const healthColor = health > 70 ? '#4CAF50' : health > 40 ? '#FF9800' : '#F44336';
+            document.getElementById('health-stat').style.color = healthColor;
+        }
+
+        // Slider event listeners
+        tempSlider.addEventListener('input', (e) => {
+            document.getElementById('temp-value').textContent = e.target.value + '°C';
+            updateEarthVisuals();
+        });
+
+        co2Slider.addEventListener('input', (e) => {
+            document.getElementById('co2-value').textContent = e.target.value + ' ppm';
+            updateEarthVisuals();
+        });
+
+        seaSlider.addEventListener('input', (e) => {
+            document.getElementById('sea-value').textContent = '+' + e.target.value + 'cm';
+        });
+
+        forestSlider.addEventListener('input', (e) => {
+            document.getElementById('forest-value').textContent = e.target.value + '%';
+            updateEarthVisuals();
+        });
+
+        renewableSlider.addEventListener('input', (e) => {
+            document.getElementById('renewable-value').textContent = e.target.value + '%';
+            updateEarthVisuals();
+        });
+
+        industrySlider.addEventListener('input', (e) => {
+            document.getElementById('industry-value').textContent = e.target.value + '%';
+            updateEarthVisuals();
+        });
+
+        // Initialize initiatives feed
+        const sampleInitiatives = [
+            {
+                title: "Urban Rooftop Gardens Network",
+                category: "agriculture",
+                location: "Singapore",
+                description: "Building a network of rooftop gardens across Singapore's HDB blocks. We've already converted 15 rooftops and grow 2 tons of vegetables monthly! Join us to learn urban farming and reduce food miles.",
+                impact: "2 tons food/month, -5 tons CO₂/year",
+                author: "GreenSG Community",
+                supporters: 234
+            },
+            {
+                title: "Beach Cleanup AI Tracker",
+                category: "technology",
+                location: "Global",
+                description: "Developed an AI-powered app that gamifies beach cleanups. Scan plastic waste, earn points, compete with friends! Already removed 50 tons of ocean plastic across 30 countries.",
+                impact: "50+ tons plastic removed",
+                author: "OceanTech Collective",
+                supporters: 1842
+            },
+            {
+                title: "School Solar Installation Fund",
+                category: "renewable",
+                location: "Malaysia",
+                description: "Crowdfunding solar panels for 100 rural schools in Malaysia. Each school saves $2000/year on electricity and becomes a teaching lab for renewable energy. 23 schools completed!",
+                impact: "23 schools powered, -120 tons CO₂/year",
+                author: "Bright Future Initiative",
+                supporters: 567
+            },
+            {
+                title: "Bike Lane Advocacy Campaign",
+                category: "transport",
+                location: "Bangkok",
+                description: "Petitioning Bangkok government to build 200km of protected bike lanes. We've collected 50,000 signatures and partnered with 12 environmental NGOs. Help us reach 100k!",
+                impact: "Potential: -50,000 tons CO₂/year",
+                author: "Bangkok Cyclists Union",
+                supporters: 892
+            }
+        ];
+
+        function renderInitiatives() {
+            const container = document.getElementById('initiatives-container');
+            const initiatives = JSON.parse(localStorage.getItem('initiatives') || '[]');
+            const allInitiatives = [...initiatives, ...sampleInitiatives];
+            
+            container.innerHTML = allInitiatives.map(init => `
+                <div class="initiative-card">
+                    <div class="initiative-header">
+                        <div class="initiative-title">${init.title}</div>
+                        <div class="initiative-category">${init.category}</div>
+                    </div>
+                    <div class="initiative-description">${init.description}</div>
+                    <div style="background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 10px; margin: 10px 0;">
+                        <strong>💚 Impact:</strong> ${init.impact}
+                    </div>
+                    <div class="initiative-meta">
+                        <span>📍 ${init.location}</span>
+                        <span>👤 ${init.author || 'Anonymous'}</span>
+                        <span>💙 ${init.supporters || 0} supporters</span>
+                    </div>
+                    <button class="support-btn" onclick="supportInitiative(this)">🤝 Support This Initiative</button>
+                </div>
+            `).join('');
+        }
+
+        function postInitiative() {
+            const title = document.getElementById('initiative-title').value;
+            const category = document.getElementById('initiative-category').value;
+            const location = document.getElementById('initiative-location').value;
+            const description = document.getElementById('initiative-description').value;
+            const impact = document.getElementById('initiative-impact').value;
+            const contact = document.getElementById('initiative-contact').value;
+            
+            if (!title || !description || !location) {
+                alert('Please fill in all required fields!');
+                return;
+            }
+            
+            const initiative = {
+                title,
+                category,
+                location,
+                description,
+                impact: impact || 'To be measured',
+                contact,
+                author: 'You',
+                supporters: 0,
+                timestamp: new Date().toISOString()
+            };
+            
+            const initiatives = JSON.parse(localStorage.getItem('initiatives') || '[]');
+            initiatives.unshift(initiative);
+            localStorage.setItem('initiatives', JSON.stringify(initiatives));
+            
+            // Clear form
+            document.getElementById('initiative-title').value = '';
+            document.getElementById('initiative-description').value = '';
+            document.getElementById('initiative-location').value = '';
+            document.getElementById('initiative-impact').value = '';
+            document.getElementById('initiative-contact').value = '';
+            
+            // Show success message
+            alert('🎉 Your initiative has been posted! Switch to the Community Ideas tab to see it.');
+            
+            // Refresh feed
+            renderInitiatives();
+        }
+
+        function supportInitiative(button) {
+            const card = button.closest('.initiative-card');
+            const title = card.querySelector('.initiative-title').textContent;
+            
+            button.textContent = '✓ Supported!';
+            button.style.background = 'linear-gradient(135deg, #4CAF50, #8BC34A)';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                alert(`🙌 Awesome! You're now supporting "${title}"!\n\nYou'll receive updates and can connect with other supporters. Together we're stronger!`);
+            }, 300);
+        }
+
+        // AI Chat functionality
+        async function sendMessage() {
+            const input = document.getElementById('ai-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const chatMessages = document.getElementById('chat-messages');
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = message;
+            chatMessages.appendChild(userMsg);
+            
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Show typing indicator
+            const typingMsg = document.createElement('div');
+            typingMsg.className = 'message ai';
+            typingMsg.textContent = '🤔 Thinking...';
+            chatMessages.appendChild(typingMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            try {
+                // Call Claude API
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1000,
+                        messages: [{
+                            role: 'user',
+                            content: `You are a helpful climate action AI assistant. The user asked: "${message}". Provide practical, actionable advice about climate action, sustainability, or environmental science. Be encouraging and solutions-focused. Keep response concise (2-3 paragraphs).`
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                const aiResponse = data.content.find(block => block.type === 'text')?.text || 
+                                  'Sorry, I encountered an error. Please try again!';
+                
+                // Remove typing indicator and add real response
+                chatMessages.removeChild(typingMsg);
+                
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message ai';
+                aiMsg.textContent = aiResponse;
+                chatMessages.appendChild(aiMsg);
+                
+            } catch (error) {
+                // Fallback responses if API fails
+                const fallbackResponses = {
+                    'carbon': 'To reduce your carbon footprint: 1) Switch to renewable energy, 2) Reduce meat consumption, 3) Use public transport or bike, 4) Buy local and seasonal produce, 5) Reduce, reuse, recycle. Small changes add up! Start with one action today.',
+                    'solar': 'Solar energy is amazing! For homes: research local solar incentives, get quotes from 3+ installers, consider community solar if you rent. Average payback is 7-12 years. Even small solar setups make a difference!',
+                    'recycle': 'Recycling tips: 1) Clean containers before recycling, 2) Check local rules (they vary!), 3) Reduce and reuse first, 4) Compost organic waste, 5) Avoid single-use plastics. Remember: the best waste is no waste!',
+                    'default': 'Great question about climate action! Key principles: 1) Individual actions matter, 2) System change is crucial, 3) Stay informed, 4) Support green policies, 5) Inspire others. Every small step creates ripples of change. What specific area interests you most?'
+                };
+                
+                chatMessages.removeChild(typingMsg);
+                
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message ai';
+                
+                // Simple keyword matching
+                const lowerMessage = message.toLowerCase();
+                if (lowerMessage.includes('carbon') || lowerMessage.includes('footprint')) {
+                    aiMsg.textContent = fallbackResponses.carbon;
+                } else if (lowerMessage.includes('solar') || lowerMessage.includes('renewable')) {
+                    aiMsg.textContent = fallbackResponses.solar;
+                } else if (lowerMessage.includes('recycle') || lowerMessage.includes('waste')) {
+                    aiMsg.textContent = fallbackResponses.recycle;
+                } else {
+                    aiMsg.textContent = fallbackResponses.default;
+                }
+                
+                chatMessages.appendChild(aiMsg);
+            }
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Initialize
+        renderInitiatives();
+        updateEarthVisuals();
+    </script>
+</body>
+</html>
